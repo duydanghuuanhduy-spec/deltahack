@@ -1,0 +1,635 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Delta AnhDuy</title>
+    <style>
+        :root {
+            --bg-dark: #0a0e17;
+            --card-bg: #121824;
+            --card-border: #1e293b;
+            --accent-green: #10b981;
+            --accent-green-glow: rgba(16, 185, 129, 0.3);
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --input-bg: #1a2234;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            padding: 15px;
+            transition: filter 0.3s ease, background-color 0.3s ease;
+        }
+
+        /* Lớp phủ tăng hiệu ứng độ sáng khi bật công tắc */
+        #screenGlowOverlay {
+            position: fixed;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            background: rgba(255, 255, 255, 0.15);
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            z-index: 9999;
+        }
+
+        .app-container {
+            width: 100%;
+            max-width: 480px;
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            padding: 20px;
+            margin-top: 10px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Header */
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid var(--card-border);
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .brand-icon {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, #10b981, #059669);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 20px;
+            color: #fff;
+            box-shadow: 0 0 15px var(--accent-green-glow);
+        }
+
+        .brand-title {
+            font-size: 18px;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+        }
+
+        .brand-sub {
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        .badge-active {
+            background: rgba(16, 185, 129, 0.15);
+            color: var(--accent-green);
+            border: 1px solid var(--accent-green);
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        /* Navigation Tabs */
+        .nav-tabs {
+            display: flex;
+            background: var(--input-bg);
+            padding: 4px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+        }
+
+        .nav-btn {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            background: transparent;
+            color: var(--text-muted);
+            font-weight: 600;
+            font-size: 13px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .nav-btn.active {
+            background: var(--card-bg);
+            color: var(--accent-green);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+        }
+
+        /* Views */
+        .view-panel {
+            display: none;
+        }
+
+        .view-panel.active {
+            display: block;
+        }
+
+        /* Key Lock Screen */
+        .lock-screen {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 30px 10px;
+            text-align: center;
+        }
+
+        .lock-icon {
+            font-size: 48px;
+            margin-bottom: 15px;
+        }
+
+        .lock-title {
+            font-size: 20px;
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+
+        .lock-desc {
+            font-size: 13px;
+            color: var(--text-muted);
+            margin-bottom: 25px;
+        }
+
+        .key-input {
+            width: 100%;
+            padding: 14px;
+            background: var(--input-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 12px;
+            color: #fff;
+            font-size: 16px;
+            text-align: center;
+            outline: none;
+            margin-bottom: 15px;
+            letter-spacing: 2px;
+        }
+
+        .key-input:focus {
+            border-color: var(--accent-green);
+        }
+
+        .btn-submit {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #10b981, #059669);
+            border: none;
+            border-radius: 12px;
+            color: #fff;
+            font-weight: bold;
+            font-size: 15px;
+            cursor: pointer;
+            box-shadow: 0 4px 15px var(--accent-green-glow);
+        }
+
+        .error-msg {
+            color: #ef4444;
+            font-size: 12px;
+            margin-top: 10px;
+            display: none;
+        }
+
+        /* Toggle List Items */
+        .feature-item {
+            background: var(--input-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 14px;
+            padding: 16px;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            cursor: pointer;
+            transition: border-color 0.2s;
+        }
+
+        .feature-item:hover {
+            border-color: #334155;
+        }
+
+        .feature-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .feature-name {
+            font-size: 15px;
+            font-weight: 600;
+            text-transform: lowercase;
+        }
+
+        .feature-tag {
+            font-size: 10px;
+            background: rgba(255,255,255,0.05);
+            padding: 2px 6px;
+            border-radius: 4px;
+            color: var(--text-muted);
+        }
+
+        /* Switch Toggle */
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 48px;
+            height: 26px;
+        }
+
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-color: #334155;
+            transition: .3s;
+            border-radius: 26px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 20px;
+            width: 20px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: .3s;
+            border-radius: 50%;
+        }
+
+        input:checked + .slider {
+            background-color: var(--accent-green);
+            box-shadow: 0 0 10px var(--accent-green-glow);
+        }
+
+        input:checked + .slider:before {
+            transform: translateX(22px);
+        }
+
+        /* Sensitivity Search View */
+        .search-box {
+            position: relative;
+            margin-bottom: 15px;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 12px 15px 12px 40px;
+            background: var(--input-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 12px;
+            color: #fff;
+            font-size: 14px;
+            outline: none;
+        }
+
+        .search-input:focus {
+            border-color: var(--accent-green);
+        }
+
+        .search-icon {
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-muted);
+        }
+
+        .sens-card {
+            background: var(--input-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 14px;
+            padding: 16px;
+            margin-top: 15px;
+        }
+
+        .device-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid var(--card-border);
+        }
+
+        .device-title {
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--accent-green);
+            text-transform: uppercase;
+        }
+
+        .grid-sens {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        .sens-item {
+            background: rgba(0,0,0,0.2);
+            padding: 10px;
+            border-radius: 8px;
+            border: 1px solid rgba(255,255,255,0.03);
+        }
+
+        .sens-label {
+            font-size: 11px;
+            color: var(--text-muted);
+            margin-bottom: 4px;
+        }
+
+        .sens-value {
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--text-main);
+        }
+
+        .footer {
+            margin-top: 20px;
+            text-align: center;
+            font-size: 11px;
+            color: var(--text-muted);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .btn-logout {
+            background: none;
+            border: none;
+            color: #ef4444;
+            font-size: 11px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+
+<div id="screenGlowOverlay"></div>
+
+<div class="app-container">
+    
+    <!-- Lock Screen -->
+    <div id="lockView" class="lock-screen">
+        <div class="lock-icon">🔑</div>
+        <div class="lock-title">Kích Hoạt Delta AnhDuy</div>
+        <div class="lock-desc">Nhập mã Key bí mật để truy cập ứng dụng</div>
+        <input type="text" id="keyInput" class="key-input" placeholder="Nhập Key tại đây..." autocomplete="off">
+        <button class="btn-submit" onclick="unlockApp()">KÍCH HOẠT APP</button>
+        <div id="errorMsg" class="error-msg">Mã Key không chính xác! Vui lòng thử lại.</div>
+    </div>
+
+    <!-- Main Content App -->
+    <div id="mainApp" style="display: none;">
+        
+        <!-- Header -->
+        <div class="header">
+            <div class="brand">
+                <div class="brand-icon">Δ</div>
+                <div>
+                    <div class="brand-title">Delta AnhDuy</div>
+                    <div class="brand-sub">Bảng Điều Khiển & Độ Nhạy</div>
+                </div>
+            </div>
+            <div class="badge-active">ACTIVE</div>
+        </div>
+
+        <!-- Navigation Tabs -->
+        <div class="nav-tabs">
+            <button class="nav-btn active" onclick="switchTab('features', this)">🚀 Tính Năng</button>
+            <button class="nav-btn" onclick="switchTab('sensitivity', this)">⚙️ Độ Nhạy & DPI</button>
+        </div>
+
+        <!-- Tab 1: Features -->
+        <div id="tabFeatures" class="view-panel active">
+            
+            <div class="feature-item" onclick="toggleSwitch('aimlock')">
+                <div class="feature-info">
+                    <span class="feature-name">aimlock</span>
+                    <span class="feature-tag">Dòng 1</span>
+                </div>
+                <label class="switch" onclick="event.stopPropagation();">
+                    <input type="checkbox" id="aimlock" onchange="saveState('aimlock')">
+                    <span class="slider"></span>
+                </label>
+            </div>
+
+            <div class="feature-item" onclick="toggleSwitch('antiban')">
+                <div class="feature-info">
+                    <span class="feature-name">antiban</span>
+                    <span class="feature-tag">Dòng 2</span>
+                </div>
+                <label class="switch" onclick="event.stopPropagation();">
+                    <input type="checkbox" id="antiban" onchange="saveState('antiban')">
+                    <span class="slider"></span>
+                </label>
+            </div>
+
+        </div>
+
+        <!-- Tab 2: Sensitivity -->
+        <div id="tabSensitivity" class="view-panel">
+            <div class="search-box">
+                <span class="search-icon">🔍</span>
+                <input type="text" id="searchInput" class="search-input" placeholder="Nhập tên dòng máy (VD: Samsung A22, iPhone)..." oninput="searchSens()">
+            </div>
+
+            <div id="sensResult">
+                <div style="text-align: center; color: var(--text-muted); font-size: 13px; padding: 30px 10px;">
+                    Gõ tên dòng máy bất kỳ vào ô tìm kiếm ở trên để xem độ nhạy & DPI chuẩn.
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="footer">
+            <span>Phiên bản v2.0 - Delta AnhDuy</span>
+            <button class="btn-logout" onclick="lockApp()">Khóa App</button>
+        </div>
+
+    </div>
+
+</div>
+
+<script>
+    const SECRET_KEY = "duyanh";
+
+    document.addEventListener("DOMContentLoaded", () => {
+        if (localStorage.getItem("delta_unlocked") === "true") {
+            showMainApp();
+        }
+        loadToggleStates();
+    });
+
+    function unlockApp() {
+        const input = document.getElementById("keyInput").value.trim().toLowerCase();
+        const errorMsg = document.getElementById("errorMsg");
+
+        if (input === SECRET_KEY) {
+            localStorage.setItem("delta_unlocked", "true");
+            errorMsg.style.display = "none";
+            showMainApp();
+        } else {
+            errorMsg.style.display = "block";
+        }
+    }
+
+    function lockApp() {
+        localStorage.removeItem("delta_unlocked");
+        document.getElementById("mainApp").style.display = "none";
+        document.getElementById("lockView").style.display = "flex";
+        document.getElementById("keyInput").value = "";
+    }
+
+    function showMainApp() {
+        document.getElementById("lockView").style.display = "none";
+        document.getElementById("mainApp").style.display = "block";
+    }
+
+    function switchTab(tabName, btn) {
+        document.querySelectorAll(".nav-btn").forEach(b => b.classList.remove("active"));
+        document.querySelectorAll(".view-panel").forEach(p => p.classList.remove("active"));
+
+        btn.classList.add("active");
+        if (tabName === 'features') {
+            document.getElementById("tabFeatures").classList.add("active");
+        } else {
+            document.getElementById("tabSensitivity").classList.add("active");
+        }
+    }
+
+    function toggleSwitch(id) {
+        const checkbox = document.getElementById(id);
+        checkbox.checked = !checkbox.checked;
+        saveState(id);
+    }
+
+    function saveState(id) {
+        const state = document.getElementById(id).checked;
+        localStorage.setItem("toggle_" + id, state);
+        checkBrightnessGlow();
+    }
+
+    function loadToggleStates() {
+        ["aimlock", "antiban"].forEach(id => {
+            const saved = localStorage.getItem("toggle_" + id);
+            if (saved !== null) {
+                document.getElementById(id).checked = (saved === "true");
+            }
+        });
+        checkBrightnessGlow();
+    }
+
+    function checkBrightnessGlow() {
+        const aimlockState = document.getElementById("aimlock") ? document.getElementById("aimlock").checked : false;
+        const antibanState = document.getElementById("antiban") ? document.getElementById("antiban").checked : false;
+        const overlay = document.getElementById("screenGlowOverlay");
+
+        if (aimlockState || antibanState) {
+            overlay.style.opacity = "1";
+        } else {
+            overlay.style.opacity = "0";
+        }
+    }
+
+    function searchSens() {
+        const query = document.getElementById("searchInput").value.trim();
+        const resultContainer = document.getElementById("sensResult");
+
+        if (query === "") {
+            resultContainer.innerHTML = `
+                <div style="text-align: center; color: var(--text-muted); font-size: 13px; padding: 30px 10px;">
+                    Gõ tên dòng máy bất kỳ vào ô tìm kiếm ở trên để xem độ nhạy & DPI chuẩn.
+                </div>`;
+            return;
+        }
+
+        let hash = 0;
+        for (let i = 0; i < query.length; i++) {
+            hash = query.charCodeAt(i) + ((hash << 5) - hash);
+        }
+
+        const getVal = (min, max, offset = 0) => {
+            return Math.abs((hash + offset) % (max - min + 1)) + min;
+        };
+
+        const lookAround = getVal(95, 100, 1);
+        const redDot = getVal(90, 100, 2);
+        const scope2x = getVal(88, 98, 3);
+        const scope4x = getVal(85, 95, 4);
+        const awm = getVal(50, 75, 5);
+        const buttonSize = getVal(42, 52, 6);
+        const dpi = getVal(410, 580, 7);
+
+        resultContainer.innerHTML = `
+            <div class="sens-card">
+                <div class="device-header">
+                    <span class="device-title">📱 ${query}</span>
+                    <span style="font-size: 11px; color: var(--accent-green);">Đã Tối Ưu</span>
+                </div>
+                <div class="grid-sens">
+                    <div class="sens-item">
+                        <div class="sens-label">Nhìn Quanh</div>
+                        <div class="sens-value">${lookAround}</div>
+                    </div>
+                    <div class="sens-item">
+                        <div class="sens-label">Red Dot</div>
+                        <div class="sens-value">${redDot}</div>
+                    </div>
+                    <div class="sens-item">
+                        <div class="sens-label">Scope 2X</div>
+                        <div class="sens-value">${scope2x}</div>
+                    </div>
+                    <div class="sens-item">
+                        <div class="sens-label">Scope 4X</div>
+                        <div class="sens-value">${scope4x}</div>
+                    </div>
+                    <div class="sens-item">
+                        <div class="sens-label">Ống Ngắm AWM</div>
+                        <div class="sens-value">${awm}</div>
+                    </div>
+                    <div class="sens-item">
+                        <div class="sens-label">Nút Bắn</div>
+                        <div class="sens-value">${buttonSize}%</div>
+                    </div>
+                </div>
+                <div style="margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--card-border); display: flex; justify-content: space-between; align-items: center;">
+                    <span style="font-size: 12px; color: var(--text-muted);">Đề Xuất DPI:</span>
+                    <span style="font-size: 14px; font-weight: bold; color: #f59e0b;">${dpi} DPI</span>
+                </div>
+            </div>
+        `;
+    }
+</script>
+
+</body>
+</html>
